@@ -215,9 +215,174 @@ HET_API void(het_pushinteger)(het_State *L, het_Integer n);
 HET_API const char *(het_pushlstring)(het_State * L, const char *s, size_t len);
 HET_API const char *(het_pushstring)(het_State * L, const char *s);
 HET_API const char *(het_pushvfstring)(het_State * L, const char *fmt, va_list argp);
-HET_API const char *(het_pushfstring)(het_State *L, const char *fmt, ...);
-HET_API void (het_pushcclosure) (het_State *L, het_CFunction fn, int n);
-HET_API void (het_pushboolean) (het_State *L, int b);
-HET_API void (het_pushlightuserdata) (het_State *L, void *p);
-HET_API int (het_pushthread) (het_State *L);
+HET_API const char *(het_pushfstring)(het_State * L, const char *fmt, ...);
+HET_API void(het_pushcclosure)(het_State *L, het_CFunction fn, int n);
+HET_API void(het_pushboolean)(het_State *L, int b);
+HET_API void(het_pushlightuserdata)(het_State *L, void *p);
+HET_API int(het_pushthread)(het_State *L);
+
+/*
+** get functions (Het -> stack)
+*/
+HET_API int(het_getglobal)(het_State *L, const char *name);
+HET_API int(het_gettable)(het_State *L, int idx);
+HET_API int(het_getfield)(het_State *L, int idx, const char *k);
+HET_API int(het_geti)(het_State *L, int idx, het_Integer n);
+HET_API int(het_rawget)(het_State *L, int idx);
+HET_API int(het_rawgeti)(het_State *L, int idx, het_Integer n);
+HET_API int(het_tawgetp)(het_State *L, int idx, const void *p);
+
+HET_API void(het_createtable)(het_State *L, int narr, int nrec);
+HET_API void *(het_newuserdatauv)(het_State * L, size_t sz, int nuvalue);
+HET_API int(het_getmetatable)(het_State *L, int objindex);
+HET_API int(het_getiuservalue)(het_State *l, int idx, int n);
+
+/*
+** set functions (stack -> Het)
+*/
+HET_API void(het_setglobal)(het_State *L, const char *name);
+HET_API void(het_settable)(het_State *L, int idx);
+HET_API void(het_setfield)(het_State *L, int idx, const char *k);
+HET_API void(het_seti)(het_State *L, int idx, het_Integer n);
+HET_API void(het_rawset)(het_State *L, int idx);
+HET_API void(het_rawseti)(het_State *L, int idx, het_Integer n);
+HET_API void(het_rawsetp)(het_State *L, int idx, const void *p);
+HET_API int(het_setmetatable)(het_State *L, int objindex);
+HET_API int(het_setiuservalue)(het_State *L, int idx, int n);
+
+/*
+** load and call functions (load and run Het code)
+*/
+HET_API void(het_callk)(het_State *L, int nargs, int nresults,
+                        het_KContext ctx, het_KFunction k);
+#define het_call(L, n, r) het_callk(L, (n), (r), 0, NULL)
+
+HET_API int(het_pcallk)(het_State *L, int nargs, int nresults, int errfunc,
+                        het_KContext ctx, het_KFunction k);
+#define het_pcall(L, n, r, f) het_pcall(L, (n), (r), (f), 0, NULL)
+
+HET_API int(het_load)(het_State *L, het_Reader reader, void *dt,
+                      const char *chunkname, const char *mode);
+
+HET_API int(het_dump)(het_State *L, het_Writer writer, void *data, int strip);
+
+/*
+** coroutine functions
+*/
+HET_API int(het_yieldk)(het_State *L, int nresults, het_KContext ctx,
+                        het_KFunction k);
+HET_API int(het_resume)(het_State *L, het_State *from, int narg,
+                        int *nres);
+HET_API int(het_status)(het_State *L);
+HET_API int(het_isyieldable)(het_State *L);
+
+#define het_yield(L, n) het_yielk(L, (n), 0, NULL)
+
+/*
+** Warning-related functions
+*/
+HET_API void(het_setwarnf)(het_State *L, het_WarnFunctions f, void *ud);
+HET_API void(het_warning)(het_State *L, const char *msg, int tocont);
+
+/*
+** garbage-collection function and options
+*/
+#define HET_GCSTOP 1
+#define HET_GCRESTART 2
+#define HET_GCCOLLECT 3
+#define HET_GCCOUNT 4
+#define HET_GCCOUNTB 5
+#define HET_GCSTEP 6
+#define HET_GCSETPAUSE 7
+#define HET_GCSETSTEPMUL 8
+#define HET_GCISRUNNING 9
+#define HET_GCGEN 10
+#define HET_GCINC 11
+
+HET_API int(het_gc)(het_State *L, int what, ...);
+
+/*
+** miscellaneous functions
+*/
+
+HET_API int(het_error)(het_State *L);
+
+HET_API int(het_next)(het_State *L, int idx);
+
+HET_API void(het_concat)(het_State *L, int n);
+HET_API void(het_len)(het_State *L, int idx);
+
+HET_API size_t(het_stringtonumber)(het_State *L, const char *s);
+
+HET_API het_Alloc(het_getallocf)(het_State *L, void **ud);
+HET_API void(het_setallocf)(het_State *L, het_Alloc *f, void *ud);
+
+HET_API void(het_toclose)(het_State *L, int idx);
+HET_API void(het_closeslot)(het_State *L, int idx);
+
+/*
+ * useful macros
+ */
+
+#define het_getextraspace(L) ((void *)((char *)(L) - HET_EXTRASPACE))
+
+#define het_tonumber(L, i) het_tonumberx(L, (i), NULL)
+#define het_tointeger(L, i) het_tointeger(L, (i), NULL)
+
+#define het_pop(L, n) het_settop(L, -(n) - 1)
+
+#define het_newtable(L) het_createtable(L, 0, 0)
+
+#define het_register(L, n, f) (het_pushcfunction(L, (f)), het_setglobal(L, (n)))
+
+#define het_pushcfunction(L, f) het_pushcclosure(L, (f), 0)
+
+#define het_isfunction(L, n) (het_type(L, (n)) == HET_TFUNCTION)
+#define het_istable(L, n) (het_type(L, (n)) == HET_TTABLE)
+#define het_islightuserdata(L, n) (het_type(L, (n)) == HET_TLIGHTUSERDATA)
+#define het_isnil(L, n) (het_type(L, (n)) == HET_TNIL)
+#define het_isboolean(L, n) (het_type(L, (n)) == HET_TBOOLEAN)
+#define het_isthread(L, n) (het_type(L, (n)) == HET_TTHREAD)
+#define het_isnone(L, n) (het_type(L, (n)) == HET_TNONE)
+#define het_isnoneornil(L, n) (het_type(L, (n)) <= 0)
+
+#define het_pushliteral(L, s) het_pushstring(L, "" s)
+
+#define het_pushglobaltable(L) \
+    ((void)het_rawgeti(L, HET_REGISTRYINDEX, HET_RIDX_GLOBALS))
+
+#define het_tostring(L, i) het_tolstring(L, (i), NULL)
+#define het_insert(L, idx) het_rotate(L, (idx), 1)
+#define het_remove(L, idx) (het_rotate(L, (idx), -1), het_pop(L, 1))
+#define het_replace(L, idx) (het_copy(L, -1, (idx)), het_pop(L, 1))
+
+/*
+ * compatibility macros
+ */
+
 #endif
+
+/******************************************************************************
+ * Adapted for HETALION by J. Henrique Noronha
+ *
+ * Copyright (C) 1994-2024 Lua.org, PUC-Rio.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ ******************************************************************************/
