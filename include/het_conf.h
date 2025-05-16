@@ -463,6 +463,149 @@ integer.
 #error "numeric integer type not defined"
 
 #endif
+
+/*
+** Dependencies with C99 and other C details
+*/
+
+/*
+@@ h_sprintf is equivalent to snprintf or sprintf in C89.
+*/
+#if !defined(HET_USE_C89)
+#define h_sprintf(s, sz, f, i) snprintf(s, sz, f, i)
+#else
+#define h_sprintf(s, sz, f, i) ((void)(sz), sprintf(s, f, i))
+#endif
+
+/*
+@@ het_strx2number converts a hexadecimal numberal to a number.
+** In C99, strtod does that conversion. Otherwise, you can
+** leave het_strx2number undefined and het will provide its own implementation.
+*/
+#if !defined(HET_USE_C89)
+#define het_strx2number(s, p) het_str2number(s, p)
+#endif
+
+/*
+@@ het_pointer2str converts a pointer to a readable string in a non-specified
+way.
+*/
+#define het_pointer2str(buff, sz, p) h_sprintf(buff, sz, "%p", p)
+
+/*
+@@ het_number2strx converts a float to a hexadecimal numeral.
+** In C99, sprintf does that. Otherwise you can leave het_number2strx undefined
+and
+** het will provide its own implementation.
+*/
+#if !defined(HET_USE_C89)
+#define het_number2strx(L, b, sz, f, n)                                        \
+  ((void)L, h_sprintf(b, sz, f, (HETI_UACNUMBER)(n)))
+#endif
+
+/*
+** strof and opf variants for math functions are not valid in C89.
+** Otherwise, the macro HUGE_VALF is a good proxy for testing the
+** availability of these variants.
+*/
+#if defined(HET_USE_C89) || (defined(HUGE_VAL) && !defined(HUGE_VALF))
+#undef h_mathop
+#undef het_str2number
+#define h_mathop(op) (het_Number) op
+#define het_str2number(s, p) ((het_Number)strtod((s), (p)))
+#endif
+
+/*
+@@ HET_KCONTEXT is the type of the context for continuation functionts.
+** It must be a numerical type; Het will use intptr_t if available, otherwise it
+will use
+** ptrdiff_t
+*/
+#define HET_KCONTEXT ptrdiff_t
+
+#if !defined(HET_USE_C89) && defined(__STDC_VERSION__) &&                      \
+    __STDC_VERSION__ >= 199901L
+#include <stdint.h>
+#if defined(INTPTR_MAX)
+#undef HET_KCONTEXT
+#define HET_KCONTEXT intptr_t
+#endif
+#endif
+
+/*
+@@ het_getlocaledecpoint gets the locale radix character.
+*/
+#if !defined (het_getlocaledecpoint)
+#define het_getlocaledecpoint() (localeconv()->decimal_point[0])
+#endif
+/*
+** macros to improve jump prediction, used mostly for error handling and debug facilities.
+*/
+#if !defined (heti_likely)
+
+#if defined(__GNUC__) && !defined (HET_NOBUILTIN)
+#define heti_likely(x) (__builtin_expect(((x) != 0), 1))
+#define heti_unlikely(x) (__builtin_expect(((x) != 0), 0))
+#else
+#define heti_likely(x) (x)
+#define heti_unlikely(x) (x)
+#endif
+
+#endif
+
+#if defined (HET_CORE) || defined (HET_LIB)
+#define h_likely(x) heti_likely(x)
+#define h_unlikely(x) heti_unlikely(x)
+#endif
+
+/*
+** Language Variations
+*/
+
+/*
+@@ HET_NOCVTN2S/HETNOCVTS2N control how Het performs some
+** coercions. define to turn off autoamtic coercion fomr strings to numbers.
+*/
+/* #define HET_NOCVTN2S */
+/* #define HET_NOCVTS2N */
+
+/*
+@@ HET_USE_APICHECK turns on several consistency checks on the C API.
+*/
+#if defined(HET_USE_APICHECK)
+#include <assert.h>
+#define heti_apicheck(l,e)  assert(e)
+#endif
+
+/*
+@@ HETI_MAXSTACK limits the size of the Het stack.
+*/
+#if HETI_IS32INT
+#define HETI_MAXSTACK 1000000
+#else
+#define HETI_MAXSTACK 15000
+#endif
+
+/*
+@@ HET_EXTRASPACE defines the size of raw memory area associated with a Het state with very fast access.
+*/
+#define HET_EXTRASPACE (sizeof(void *))
+
+/*
+@@ HET_IDSIZE gives the maximum size for the description of the source of a function in the debug information.
+*/
+#define HET_IDSIZE 60
+
+/*
+@@ HETI_BUFFERSIZE is the initial buffer size
+*/
+#define HETL_BUFFERSIZE ((int)(16 * sizeof(void*) * sizeof(het_Number)))
+
+/*
+@@ HETI_MAXALIGN defines fields that, when used in union,
+** ensure maximum alignments for the other items in that union.
+*/
+#define HETI_MAXALIGN het_Number n; double u; void *s; het_Integer i; long l
 /*
 ** use this for redefinitions without modying the main part of the file.
 */
