@@ -359,6 +359,78 @@ HET_API void(het_closeslot)(het_State *L, int idx);
 /*
  * compatibility macros
  */
+#if defined(HET_COMPAT_APIINTCASTS)
+
+#define het_pushunsigned(L, n) het_pushinteger(L, (het_Integer)(n))
+#define het_tounsignedx(L, i, is) ((het_Unsigned)het_tointegerx(L, i, is))
+#define het_tounsigned(L, i) het_tounsignedx(L, (i), NULL)
+
+#endif
+
+#define het_newuserdata(L, s) het_newuserdatauv(L, s, 1)
+#define het_getuservalue(L, idx) het_getiuservalue(L, idx, 1)
+#define het_setuservalue(L, idx) het_setiuservalue(L, idx, 1)
+
+#define HET_NUMTAGS HET_NUMTYPES
+
+/*
+** Debug API
+*/
+
+/*
+** Event codes
+*/
+#define HET_HOOKCALL 0
+#define HET_HOOKRET 1
+#define HET_HOOKLINE 2
+#define HET_HOOKCOUNT 3
+#define HET_HOOKTAILCALL 4
+
+/*
+** Event masks
+*/
+#define HET_MASKCALL (1 << HET_HOOKCALL)
+#define HET_MASKRET (1 << HET_HOOKRET)
+#define HET_MASKLINE (1 << HET_HOOKLINE)
+#define HET_MASKCOUNT (1 << HET_HOOKCOUNT)
+
+HET_API int(het_getstack)(het_State *L, int level, het_Debug *ar);
+HET_API int(het_getinfo)(het_State *L, const char *what, het_Debug *ar);
+HET_API const char *(het_getlocal)(het_State * L, const het_Debug *ar, int n);
+HET_API const char *(het_setlocal)(het_State * L, const het_Debug *ar, int n);
+HET_API const char *(het_getupvalue)(het_State * L, int funcindex, int n);
+HET_API const char *(het_setupvalue)(het_State * L, int funcindex, int n);
+
+HET_API void *(het_upvalueid)(het_State * L, int fidx, int n);
+HET_API void(het_upvaluejoin)(het_State *L, int fidx1, int n1, int fidx2, int n2);
+
+HET_API void (het_sethook) (het_State *L, het_Hook func, int mask, int count);
+HET_API het_Hook (het_gethook) (het_State *L);
+HET_API int (het_gethookmask) (het_State *L);
+HET_API int (het_gethookcount) (het_State *L);
+
+HET_API int (het_setcstacklimit) (het_State *L, unsigned int limit);
+
+struct het_Debug {
+    int event;
+    const char *name; /* (n) */
+    const char *namewhat; /* (n) 'global', 'local', 'field', 'method' */
+    const char *what; /* (S) 'Het', 'C', 'main', 'tail' */
+    const char *source; /* (S)*/
+    size_t srclen; /* (S) */
+    int currentline; /* (l) */
+    int linedefined; /* (S) */
+    int lastlinedefined; /* (S) */
+    unsigned char nups; /* (u) */
+    unsigned char nparams; /* (u) */
+    char isvararg; /* (u) */
+    char istailcall; /* (t) */
+    unsigned short ftransfer; /* (r) index of first value transferred */
+    unsigned short ntransfer; /* (r) number of transferred values */
+    char short_src[HET_IDSIZE]; /* (S) */
+    /* private part */
+    struct CallInfo *i_ci; /* active function */
+};
 
 #endif
 
